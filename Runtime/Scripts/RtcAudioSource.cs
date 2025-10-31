@@ -68,9 +68,12 @@ namespace LiveKit
             var newAudioSource = request.request;
             newAudioSource.Type = AudioSourceType.AudioSourceNative;
             newAudioSource.NumChannels = (uint)channels;
+#if UNITY_ANDROID && !UNITY_EDITOR
+            newAudioSource.SampleRate = 24000; // THIS WILL BREAK SOME ANDROID BUILDS. But it works for Meta Quest
+#else
             newAudioSource.SampleRate = _sourceType == RtcAudioSourceType.AudioSourceMicrophone ?
                 DefaultMicrophoneSampleRate : DefaultSampleRate;
-
+#endif
             UnityEngine.Debug.Log($"NewAudioSource: {newAudioSource.NumChannels} {newAudioSource.SampleRate}");
 
             newAudioSource.Options = request.TempResource<AudioSourceOptions>();
@@ -111,7 +114,7 @@ namespace LiveKit
             if (_frameData.Length != data.Length)
             {
                 if (_frameData.IsCreated) _frameData.Dispose();
-                 _frameData = new NativeArray<short>(data.Length, Allocator.Persistent);
+                _frameData = new NativeArray<short>(data.Length, Allocator.Persistent);
             }
 
             // Copy from the audio read buffer into the frame buffer, converting
@@ -135,8 +138,8 @@ namespace LiveKit
             pushFrame.Buffer = audioFrameBufferInfo;
             unsafe
             {
-                 pushFrame.Buffer.DataPtr = (ulong)NativeArrayUnsafeUtility
-                    .GetUnsafePtr(_frameData);
+                pushFrame.Buffer.DataPtr = (ulong)NativeArrayUnsafeUtility
+                   .GetUnsafePtr(_frameData);
             }
             pushFrame.Buffer.NumChannels = (uint)channels;
             pushFrame.Buffer.SampleRate = (uint)sampleRate;
